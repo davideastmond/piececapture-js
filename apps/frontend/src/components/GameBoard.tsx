@@ -80,7 +80,7 @@ export const GameBoard: React.FC = () => {
             <span>{gameState.players.player1.name} (Blue)</span>
             <span className="text-2xl">{gameState.players.player1.score}</span>
           </div>
-          <div className="w-[1px] bg-slate-700 self-stretch"></div>
+          <div className="w-px bg-slate-700 self-stretch"></div>
           <div
             className={`flex flex-col items-center ${gameState.turn === "player2" ? "text-rose-400 font-bold scale-105 transition-all" : "opacity-60"}`}
           >
@@ -109,32 +109,53 @@ export const GameBoard: React.FC = () => {
         }}
       >
         {gameState.board.map((row, rowIndex) =>
-          row.map((cellValue, colIndex) => (
-            <button
-              key={`${rowIndex}-${colIndex}`}
-              onClick={() => handleCellClick(rowIndex, colIndex)}
-              disabled={gameState.status === "ended"}
-              className="relative aspect-square w-full h-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center justify-center transition-colors shadow-inner group"
-            >
-              {/* Coordinate Label Hint for hover state */}
-              {cellValue === null && gameState.status === "playing" && (
-                <span className="absolute text-[8px] opacity-0 group-hover:opacity-30 text-slate-400 pointer-events-none">
-                  {rowIndex},{colIndex}
-                </span>
-              )}
+          row.map((cellValue, colIndex) => {
+            const owner =
+              cellValue === null || typeof cellValue === "object"
+                ? (cellValue?.owner ?? null)
+                : cellValue;
+            const isCaptured =
+              typeof cellValue === "object" &&
+              cellValue !== null &&
+              cellValue.isCaptured;
 
-              {/* Visual Piece Tokens */}
-              {cellValue !== null && (
-                <div
-                  className={`w-4/5 h-4/5 rounded-full shadow-md animate-scaleUp ${
-                    cellValue === "player1"
-                      ? "bg-gradient-to-br from-blue-400 to-blue-600 border border-blue-300"
-                      : "bg-gradient-to-br from-rose-400 to-rose-600 border border-rose-300"
-                  }`}
-                />
-              )}
-            </button>
-          )),
+            return (
+              <button
+                key={`${rowIndex}-${colIndex}`}
+                onClick={() => handleCellClick(rowIndex, colIndex)}
+                disabled={gameState.status === "ended"}
+                className="relative aspect-square w-full h-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center justify-center transition-colors shadow-inner group"
+              >
+                {/* Coordinate Label Hint for hover state */}
+                {cellValue === null && gameState.status === "playing" && (
+                  <span className="absolute text-[8px] opacity-0 group-hover:opacity-30 text-slate-400 pointer-events-none">
+                    {rowIndex},{colIndex}
+                  </span>
+                )}
+
+                {/* Visual Piece Tokens */}
+                {cellValue !== null && (
+                  <div
+                    className={`relative w-4/5 h-4/5 rounded-full shadow-md animate-scaleUp border ${
+                      isCaptured
+                        ? owner === "player1"
+                          ? "bg-blue-500/20 border-dashed border-blue-300 opacity-75"
+                          : "bg-rose-500/20 border-dashed border-rose-300 opacity-75"
+                        : owner === "player1"
+                          ? "bg-gradient-to-br from-blue-400 to-blue-600 border border-blue-300"
+                          : "bg-gradient-to-br from-rose-400 to-rose-600 border border-rose-300"
+                    }`}
+                  >
+                    {isCaptured && (
+                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black tracking-[0.2em] text-slate-100/90">
+                        C
+                      </span>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          }),
         )}
       </div>
 
