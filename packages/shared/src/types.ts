@@ -5,8 +5,14 @@ export interface Player {
   name: string;
   score: number;
 }
+// New Object Structure for cells
 
-export type CellValue = PlayerId | null; // null represents an empty space
+export interface GamePiece {
+  owner: PlayerId;
+  isCaptured: boolean;
+}
+
+export type CellValue = PlayerId | GamePiece | null; // null represents an empty space
 
 export interface Coordinate {
   row: number;
