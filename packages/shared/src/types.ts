@@ -1,4 +1,5 @@
 export type PlayerId = "player1" | "player2";
+export type CpuDifficulty = "easy" | "challenging";
 
 export interface Player {
   id: PlayerId;
@@ -25,4 +26,5 @@ export interface GameState {
   players: Record<PlayerId, Player>;
   status: "playing" | "ended";
   winner: PlayerId | "draw" | null;
+  cpuDifficulty: CpuDifficulty;
 }
