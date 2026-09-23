@@ -80,3 +80,13 @@ npm run dev --workspace=frontend
 # Target and build the frontend package for production testing
 
 npm run build --workspace=frontend
+
+# CPU Strategy Evaluation
+
+## Basic principles
+
+- CPU is aggressive in capturing opponent pieces. CPU captures a piece especially when the move doesn't lead to the CPU's piece being captured itself.
+- CPU avoids moves that would leave its pieces vulnerable to immediate capture by the human player.
+- CPU values positioning near the edges and corners of the board for strategic advantage, balancing aggression with safety.
+- CPU blocks potential capture opportunities for the human player, prioritizing defensive positioning when necessary.
+- CPU lays traps by positioning pieces in a way that can lead to multiple captures in subsequent moves, leveraging both offensive and defensive strategies.
