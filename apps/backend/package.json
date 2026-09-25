@@ -1,0 +1,9 @@
+{
+  "name": "@game/backend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@game/shared": "*",
+    "@vercel/node": "^3.0.0"
+  }
+}
