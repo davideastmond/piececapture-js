@@ -1,10 +1,13 @@
+import { Route, Routes } from "react-router";
 import "./App.css";
-import { GameBoard } from "./components/GameBoard";
+import { Home } from "./pages/Home";
 
 function App() {
   return (
     <div className="App">
-      <GameBoard />
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
     </div>
   );
 }
