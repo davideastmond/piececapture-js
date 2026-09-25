@@ -4,16 +4,13 @@ import {
   getBestCPUMove,
   isBoardFull,
   processTurn,
-  type CpuDifficulty,
   type GameState,
 } from "@game/shared";
 import React, { useEffect, useState } from "react";
 
 export const GameBoard: React.FC = () => {
-  const [difficulty, setDifficulty] = useState<CpuDifficulty>("easy");
-
   const [gameState, setGameState] = useState<GameState>(() =>
-    createInitialGameState(difficulty),
+    createInitialGameState(),
   );
 
   const determineWinner = (
@@ -81,7 +78,6 @@ export const GameBoard: React.FC = () => {
       players: updatedPlayers,
       status: nextStatus,
       winner: finalWinner,
-      cpuDifficulty: currentState.cpuDifficulty,
     };
   };
 
@@ -114,12 +110,7 @@ export const GameBoard: React.FC = () => {
     }, 450);
 
     return () => window.clearTimeout(timeoutId);
-  }, [
-    gameState.board,
-    gameState.cpuDifficulty,
-    gameState.status,
-    gameState.turn,
-  ]);
+  }, [gameState.board, gameState.status, gameState.turn]);
 
   const handleCellClick = (row: number, col: number) => {
     if (gameState.turn !== "player1") {
@@ -131,16 +122,8 @@ export const GameBoard: React.FC = () => {
     );
   };
 
-  const handleDifficultyChange = (nextDifficulty: CpuDifficulty) => {
-    setDifficulty(nextDifficulty);
-    setGameState((currentState) => ({
-      ...currentState,
-      cpuDifficulty: nextDifficulty,
-    }));
-  };
-
   const resetGame = () => {
-    setGameState(createInitialGameState(difficulty));
+    setGameState(createInitialGameState());
   };
 
   return (
@@ -150,24 +133,6 @@ export const GameBoard: React.FC = () => {
         <h1 className="text-3xl font-bold tracking-wider mb-4 text-emerald-400">
           Tactical Matrix
         </h1>
-
-        <div className="mb-4 flex justify-center gap-3">
-          {(["easy", "challenging"] as const).map((level) => (
-            <button
-              key={level}
-              type="button"
-              onClick={() => handleDifficultyChange(level)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                difficulty === level
-                  ? "border-emerald-400 bg-emerald-500/20 text-emerald-300"
-                  : "border-slate-600 bg-slate-800 text-slate-200 hover:border-slate-500"
-              }`}
-            >
-              {level === "easy" ? "Easy CPU" : "Challenging CPU"}
-            </button>
-          ))}
-        </div>
-
         <div className="flex gap-8 bg-slate-800 px-6 py-3 rounded-xl border border-slate-700 shadow-lg">
           <div
             className={`flex flex-col items-center ${gameState.turn === "player1" ? "text-blue-400 font-bold scale-105 transition-all" : "opacity-60"}`}

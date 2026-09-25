@@ -1,5 +1,5 @@
 import { BOARD_SIZE } from "./constants";
-import type { CellValue, Coordinate, CpuDifficulty, GameState } from "./types";
+import type { CellValue, Coordinate, GameState } from "./types";
 
 export function getNeighbors(row: number, col: number): Coordinate[] {
   const directions = [
@@ -21,9 +21,7 @@ export function isBoardFull(board: CellValue[][]): boolean {
   return board.every((row) => row.every((cell) => cell !== null));
 }
 
-export function createInitialGameState(
-  cpuDifficulty: CpuDifficulty = "easy",
-): GameState {
+export function createInitialGameState(): GameState {
   return {
     board: Array(BOARD_SIZE)
       .fill(null)
@@ -35,6 +33,5 @@ export function createInitialGameState(
     },
     status: "playing",
     winner: null,
-    cpuDifficulty,
   };
 }
