@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@game/shared": "*",
-    "@vercel/node": "^3.0.0"
+    "@vercel/node": "^3.0.0",
+    "mongodb": "^7.6.0"
   }
 }
