@@ -81,15 +81,6 @@ function isMoveDangerous(
   });
 }
 
-function countImmediateCaptures(
-  board: CellValue[][],
-  row: number,
-  col: number,
-  owner: PlayerId,
-): number {
-  return processTurn(board, row, col, owner).moverPoints;
-}
-
 function getPositionValue(row: number, col: number): number {
   if (isInCorner(row, col)) return 32;
   if (isOnEdge(row, col)) return 18;
@@ -172,9 +163,13 @@ function hasTrapPressure(
       return false;
     }
 
-    const adjacentCpuCount = getNeighbors(n.row, n.col).filter(
-      (adjacent) => getCellOwner(board[adjacent.row][adjacent.col]) === cpuId,
-    ).length;
+    // Captured pieces can no longer help encircle and capture an opponent.
+    const adjacentCpuCount = getNeighbors(n.row, n.col).filter((adjacent) => {
+      const adjacentCell = board[adjacent.row][adjacent.col];
+      return (
+        getCellOwner(adjacentCell) === cpuId && !isCellCaptured(adjacentCell)
+      );
+    }).length;
 
     return adjacentCpuCount >= 2;
   });
@@ -186,7 +181,9 @@ export function evaluateMoveScore(
   col: number,
   cpuId: PlayerId,
 ): number {
-  const immediateCaptures = countImmediateCaptures(board, row, col, cpuId);
+  const turnResult = processTurn(board, row, col, cpuId);
+  const immediateCaptures = turnResult.moverPoints;
+  const selfCaptured = turnResult.opponentPoints > 0;
   const moveDangerous = isMoveDangerous(board, row, col, cpuId);
   const neighbors = getNeighbors(row, col);
   const humanId = getOtherPlayer(cpuId);
@@ -200,7 +197,11 @@ export function evaluateMoveScore(
   }
 
   // 2. Safety-first defense: avoid moves that leave the CPU's newly placed piece exposed.
-  if (moveDangerous) {
+  // A move that gets the placed piece captured on the spot is strictly worse than one
+  // that merely risks capture on the opponent's next turn, so it is penalized harder.
+  if (selfCaptured) {
+    score -= 15000;
+  } else if (moveDangerous) {
     score -= 9000;
   }
   score += getImmediateDefenseValue(board, row, col, cpuId);
@@ -217,7 +218,8 @@ export function evaluateMoveScore(
       score += moveDangerous ? 0 : 900;
     }
 
-    if (targetOwner === cpuId) {
+    // Only active (non-captured) pieces can help form future encirclements.
+    if (targetOwner === cpuId && !isCellCaptured(targetCell)) {
       score += 40;
     }
   });
