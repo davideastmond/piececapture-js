@@ -5,6 +5,10 @@
   "dependencies": {
     "@game/shared": "*",
     "@vercel/node": "^3.0.0",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.6.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10"
   }
 }
