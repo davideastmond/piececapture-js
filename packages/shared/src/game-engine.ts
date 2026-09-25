@@ -29,12 +29,29 @@ export function isPieceCaptured(
   );
 }
 
+export function isPlacementInCaptureSituation(
+  board: CellValue[][],
+  targetRow: number,
+  targetCol: number,
+  targetOwner: PlayerId,
+): boolean {
+  return isPieceCaptured(board, targetRow, targetCol, targetOwner);
+}
+
+export interface TurnResult {
+  newBoard: CellValue[][];
+  /** Points earned by activePlayer from capturing opponent pieces this turn. */
+  moverPoints: number;
+  /** Points earned by the opponent because the newly placed piece was self-trapped. */
+  opponentPoints: number;
+}
+
 export function processTurn(
   currentBoard: CellValue[][],
   placedRow: number,
   placedCol: number,
   activePlayer: PlayerId,
-): { newBoard: CellValue[][]; pointsGained: number } {
+): TurnResult {
   const newBoard = currentBoard.map((row) =>
     row.map((cell) =>
       typeof cell === "object" && cell !== null ? { ...cell } : cell,
@@ -42,23 +59,45 @@ export function processTurn(
   );
   newBoard[placedRow][placedCol] = activePlayer;
 
-  let pointsGained = 0;
+  const placedPieceCaptured = isPlacementInCaptureSituation(
+    newBoard,
+    placedRow,
+    placedCol,
+    activePlayer,
+  );
+
+  if (placedPieceCaptured) {
+    newBoard[placedRow][placedCol] = {
+      owner: activePlayer,
+      isCaptured: true,
+    } as GamePiece;
+  }
+
+  const capturedCoordinates = new Set<string>();
   const opponentId: PlayerId =
     activePlayer === "player1" ? "player2" : "player1";
   const adjacentNeighbors = getNeighbors(placedRow, placedCol);
 
   adjacentNeighbors.forEach((n) => {
     const neighbor = newBoard[n.row][n.col];
+    const neighborKey = `${n.row}:${n.col}`;
+
     if (getCellOwner(neighbor) === opponentId && !isCellCaptured(neighbor)) {
       if (isPieceCaptured(newBoard, n.row, n.col, opponentId)) {
-        newBoard[n.row][n.col] = {
-          owner: opponentId,
-          isCaptured: true,
-        } as GamePiece;
-        pointsGained += 1;
+        if (!capturedCoordinates.has(neighborKey)) {
+          capturedCoordinates.add(neighborKey);
+          newBoard[n.row][n.col] = {
+            owner: opponentId,
+            isCaptured: true,
+          } as GamePiece;
+        }
       }
     }
   });
 
-  return { newBoard, pointsGained };
+  return {
+    newBoard,
+    moverPoints: capturedCoordinates.size,
+    opponentPoints: placedPieceCaptured ? 1 : 0,
+  };
 }

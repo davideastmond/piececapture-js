@@ -1,65 +1,125 @@
 import {
   BOARD_SIZE,
   createInitialGameState,
-  type GameState,
+  getBestCPUMove,
   isBoardFull,
   processTurn,
+  type GameState,
 } from "@game/shared";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export const GameBoard: React.FC = () => {
-  // Initialize the game state using the shared utility engine
-  const [gameState, setGameState] = useState<GameState>(
+  const [gameState, setGameState] = useState<GameState>(() =>
     createInitialGameState(),
   );
 
-  const handleCellClick = (row: number, col: number) => {
-    // Prevent moves if the space is occupied or the game has ended
-    if (gameState.board[row][col] !== null || gameState.status === "ended") {
-      return;
+  const determineWinner = (
+    players: GameState["players"],
+  ): GameState["winner"] => {
+    const p1Score = players.player1.score;
+    const p2Score = players.player2.score;
+
+    if (p1Score > p2Score) return "player1";
+    if (p2Score > p1Score) return "player2";
+    return "draw";
+  };
+
+  const commitTurn = (
+    currentState: GameState,
+    row: number,
+    col: number,
+    activePlayer: "player1" | "player2",
+  ): GameState => {
+    if (
+      currentState.board[row][col] !== null ||
+      currentState.status === "ended"
+    ) {
+      return currentState;
     }
 
-    const activePlayer = gameState.turn;
-
-    // 1. Process the human player's placement and check for captures
-    const { newBoard, pointsGained } = processTurn(
-      gameState.board,
+    const { newBoard, moverPoints, opponentPoints } = processTurn(
+      currentState.board,
       row,
       col,
       activePlayer,
     );
 
-    // Update player scores
-    const updatedPlayers = { ...gameState.players };
-    updatedPlayers[activePlayer].score += pointsGained;
+    const opponent: "player1" | "player2" =
+      activePlayer === "player1" ? "player2" : "player1";
+    const currentPlayer = currentState.players[activePlayer];
+    const currentOpponent = currentState.players[opponent];
+    const updatedPlayers = {
+      ...currentState.players,
+      [activePlayer]: {
+        ...currentPlayer,
+        score: currentPlayer.score + moverPoints,
+      },
+      [opponent]: {
+        ...currentOpponent,
+        score: currentOpponent.score + opponentPoints,
+      },
+    };
 
-    // Check game end conditions
     const boardFinished = isBoardFull(newBoard);
-    let newStatus: GameState["status"] = gameState.status;
-    let finalWinner: GameState["winner"] = gameState.winner;
+    let nextStatus: GameState["status"] = currentState.status;
+    let finalWinner: GameState["winner"] = currentState.winner;
 
     if (boardFinished) {
-      newStatus = "ended";
-      const p1Score = updatedPlayers.player1.score;
-      const p2Score = updatedPlayers.player2.score;
-      if (p1Score > p2Score) finalWinner = "player1";
-      else if (p2Score > p1Score) finalWinner = "player2";
-      else finalWinner = "draw";
+      nextStatus = "ended";
+      finalWinner = determineWinner(updatedPlayers);
     }
 
-    // Determine the next turn (toggle active player)
     const nextTurn = activePlayer === "player1" ? "player2" : "player1";
 
-    setGameState({
-      ...gameState,
+    return {
+      ...currentState,
       board: newBoard,
       turn: nextTurn,
       players: updatedPlayers,
-      status: newStatus,
+      status: nextStatus,
       winner: finalWinner,
-    });
+    };
+  };
 
-    // TODO: Trigger CPU move here if nextTurn === 'player2'
+  useEffect(() => {
+    if (gameState.status !== "playing" || gameState.turn !== "player2") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setGameState((currentState) => {
+        if (
+          currentState.status !== "playing" ||
+          currentState.turn !== "player2"
+        ) {
+          return currentState;
+        }
+
+        const cpuMove = getBestCPUMove(currentState.board, "player2");
+
+        if (!cpuMove) {
+          return {
+            ...currentState,
+            status: "ended",
+            winner: determineWinner(currentState.players),
+          };
+        }
+
+        return commitTurn(currentState, cpuMove.row, cpuMove.col, "player2");
+      });
+    }, 450);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [gameState.board, gameState.status, gameState.turn]);
+
+  const handleCellClick = (row: number, col: number) => {
+    if (gameState.turn !== "player1") {
+      return;
+    }
+
+    setGameState((currentState) =>
+      commitTurn(currentState, row, col, "player1"),
+    );
   };
 
   const resetGame = () => {
@@ -123,8 +183,10 @@ export const GameBoard: React.FC = () => {
               <button
                 key={`${rowIndex}-${colIndex}`}
                 onClick={() => handleCellClick(rowIndex, colIndex)}
-                disabled={gameState.status === "ended"}
-                className="relative aspect-square w-full h-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center justify-center transition-colors shadow-inner group"
+                disabled={
+                  gameState.status === "ended" || gameState.turn === "player2"
+                }
+                className="relative aspect-square w-full h-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center justify-center transition-colors shadow-inner group disabled:cursor-not-allowed disabled:opacity-80"
               >
                 {/* Coordinate Label Hint for hover state */}
                 {cellValue === null && gameState.status === "playing" && (
